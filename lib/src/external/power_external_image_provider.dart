@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'dart:ffi';
+// import 'dart:ffi';
+import '../common/export_ffi.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 

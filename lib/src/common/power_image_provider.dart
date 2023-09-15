@@ -4,8 +4,7 @@ import 'package:flutter/painting.dart';
 import 'package:power_image/src/tools/power_image_monitor.dart';
 import 'package:power_image_ext/image_provider_ext.dart';
 
-import '../external/power_external_image_provider.dart'
-if(dart.library.html)'../external/power_external_image_provider_web.dart';
+import '../external/power_external_image_provider.dart';
 import '../texture/power_texture_image_provider.dart';
 import 'power_image_loader.dart';
 import '../options/power_image_request_options.dart';
