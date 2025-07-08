@@ -1,12 +1,13 @@
 import 'dart:async';
-
-// import 'dart:ffi';
-import '../common/export_ffi.dart';
+import 'dart:ffi';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/cupertino.dart';
 import 'package:power_image/power_image.dart';
+import 'package:power_image/src/common/power_image_provider.dart';
+import 'package:power_image/src/options/power_image_request_options.dart';
+import 'package:power_image_ext/image_info_ext.dart';
 
 class PowerExternalImageProvider extends PowerImageProvider {
   PowerExternalImageProvider(PowerImageRequestOptions options) : super(options);

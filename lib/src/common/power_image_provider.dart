@@ -37,19 +37,21 @@ abstract class PowerImageProvider extends ImageProviderExt<PowerImageProvider> {
 
   double scale;
 
+
+
+  ImageStreamCompleter? _completer;
   @override
-  ImageStreamCompleter load(PowerImageProvider key, DecoderCallback? decode) {
-    _completer = OneFrameImageStreamCompleter(_loadAsync(key, decode));
+  ImageStreamCompleter loadImage(PowerImageProvider key, ImageDecoderCallback decode) {
+    _completer = OneFrameImageStreamCompleter(_loadImageAsync(key, decode));
     return _completer!;
   }
 
-  ImageStreamCompleter? _completer;
 
-  Future<ImageInfo> _loadAsync(
-      PowerImageProvider key, DecoderCallback? decode) async {
+  Future<ImageInfo> _loadImageAsync(
+      PowerImageProvider key, ImageDecoderCallback? decode) async {
     try {
       PowerImageCompleter powerImageCompleter =
-          PowerImageLoader.instance.loadImage(options);
+      PowerImageLoader.instance.loadImage(options);
       Map map = await powerImageCompleter.completer!.future;
       bool? success = map['success'];
 
@@ -57,11 +59,11 @@ abstract class PowerImageProvider extends ImageProviderExt<PowerImageProvider> {
       bool? isMultiFrame = map['_multiFrame'];
       if (isMultiFrame == true) {
         _completer!
-          .addOnLastListenerRemovedCallback(() {
-            scheduleMicrotask(() {
-              PaintingBinding.instance.imageCache.evict(key);
-            });
+            .addOnLastListenerRemovedCallback(() {
+          scheduleMicrotask(() {
+            PaintingBinding.instance.imageCache.evict(key);
           });
+        });
       }
       _completer = null;
 
@@ -70,7 +72,7 @@ abstract class PowerImageProvider extends ImageProviderExt<PowerImageProvider> {
         // added on the server later. Avoid having future calls to resolve
         // fail to check the network again.
         final PowerImageLoadException exception =
-            PowerImageLoadException(nativeResult: map);
+        PowerImageLoadException(nativeResult: map);
         PowerImageMonitor.instance().anErrorOccurred(exception);
         throw exception;
       }
@@ -80,13 +82,66 @@ abstract class PowerImageProvider extends ImageProviderExt<PowerImageProvider> {
       // have had a chance to track the key in the cache at all.
       // Schedule a microtask to give the cache a chance to add the key.
       scheduleMicrotask(() {
-        PaintingBinding.instance!.imageCache!.evict(key);
+        PaintingBinding.instance.imageCache.evict(key);
       });
       rethrow;
     } finally {
       // chunkEvents.close();
     }
   }
+
+
+
+  // @override
+  // ImageStreamCompleter load(PowerImageProvider key, DecoderCallback? decode) {
+  //   _completer = OneFrameImageStreamCompleter(_loadAsync(key, decode));
+  //   return _completer!;
+  // }
+
+
+
+  // Future<ImageInfo> _loadAsync(
+  //     PowerImageProvider key, DecoderCallback? decode) async {
+  //   try {
+  //     PowerImageCompleter powerImageCompleter =
+  //         PowerImageLoader.instance.loadImage(options);
+  //     Map map = await powerImageCompleter.completer!.future;
+  //     bool? success = map['success'];
+  //
+  //     // remove multiFrame image cache On Last Listener Removed
+  //     bool? isMultiFrame = map['_multiFrame'];
+  //     if (isMultiFrame == true) {
+  //       _completer!
+  //         .addOnLastListenerRemovedCallback(() {
+  //           scheduleMicrotask(() {
+  //             PaintingBinding.instance!.imageCache!.evict(key);
+  //           });
+  //         });
+  //     }
+  //     _completer = null;
+  //
+  //     if (success != true) {
+  //       // The network may be only temporarily unavailable, or the file will be
+  //       // added on the server later. Avoid having future calls to resolve
+  //       // fail to check the network again.
+  //       final PowerImageLoadException exception =
+  //           PowerImageLoadException(nativeResult: map);
+  //       PowerImageMonitor.instance().anErrorOccurred(exception);
+  //       throw exception;
+  //     }
+  //     return createImageInfo(map);
+  //   } catch (e) {
+  //     // Depending on where the exception was thrown, the image cache may not
+  //     // have had a chance to track the key in the cache at all.
+  //     // Schedule a microtask to give the cache a chance to add the key.
+  //     scheduleMicrotask(() {
+  //       PaintingBinding.instance!.imageCache!.evict(key);
+  //     });
+  //     rethrow;
+  //   } finally {
+  //     // chunkEvents.close();
+  //   }
+  // }
 
   FutureOr<ImageInfo> createImageInfo(Map map);
 
@@ -95,16 +150,28 @@ abstract class PowerImageProvider extends ImageProviderExt<PowerImageProvider> {
     return SynchronousFuture<PowerImageProvider>(this);
   }
 
-  @override
-  bool operator ==(dynamic other) {
-    //TODO options判断相等
-    if (other.runtimeType != runtimeType) return false;
-    final PowerImageProvider typedOther = other;
-    return options == typedOther.options && scale == typedOther.scale;
-  }
 
   @override
-  int get hashCode => hashValues(options, scale);
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PowerImageProvider &&
+          runtimeType == other.runtimeType &&
+          options == other.options &&
+          scale == other.scale;
+
+  @override
+  int get hashCode => Object.hash(options, scale);
+
+  // @override
+  // bool operator ==(dynamic other) {
+  //   //TODO options判断相等
+  //   if (other.runtimeType != runtimeType) return false;
+  //   final PowerImageProvider typedOther = other;
+  //   return options == typedOther.options && scale == typedOther.scale;
+  // }
+  //
+  // @override
+  // int get hashCode => hashValues(options, scale);
 
   @override
   String toString() => '$runtimeType("$options", scale: $scale)';
@@ -117,8 +184,7 @@ class PowerImageLoadException implements Exception {
   /// Creates a [PowerImageLoadException] with the specified native State [state]
   /// and request [uniqueKey].
   PowerImageLoadException({required this.nativeResult})
-      : assert(nativeResult != null),
-        _message = 'Power Image request failed. For details, see the variable nativeResult';
+      : _message = 'Power Image request failed. For details, see the variable nativeResult';
 
   /// 0 = {map entry} "success" -> false
   /// 1 = {map entry} "uniqueKey" -> "{src: http://img.alicdn.com//bao//uploaded//i2//O1CN01SNnaus2KLND4UQngH_!!0-fleamarket.jpg}_imageTyp..."
